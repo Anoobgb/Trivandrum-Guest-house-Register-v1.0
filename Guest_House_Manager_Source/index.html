@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#123b35"><link rel="manifest" href="manifest.webmanifest">
+<title>Guest House Manager</title>
+<link rel="icon" href="icon.svg">
+<style>
+:root{--ink:#17332f;--muted:#6c7d79;--line:#e1e9e6;--bg:#f4f7f5;--green:#176b58;--pale:#e7f3ee;--red:#b53d36;--amber:#a96a12}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}button,input,select{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:11px 15px;background:var(--green);color:white;font-weight:650}button.secondary{background:white;color:var(--ink);border:1px solid var(--line)}button.danger{background:var(--red)}button:disabled{opacity:.5;cursor:not-allowed}
+header{background:#123b35;color:white;padding:18px max(18px,calc((100% - 1200px)/2));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}header h1{font-size:20px;margin:0}header small{opacity:.75}.wrap{max-width:1200px;margin:auto;padding:22px 18px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.toolbar button.active{background:#123b35}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.stat,.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:16px}.stat small{color:var(--muted)}.stat strong{display:block;font-size:28px;margin-top:5px}.panel{margin-bottom:16px}.panel h2{font-size:17px;margin:0 0 14px}.alert{background:#fff4e5;border:1px solid #f3d4a6;border-radius:12px;padding:12px;margin-bottom:14px}.alert strong{color:#8a5410}.filters,.formgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.field{display:flex;flex-direction:column;gap:5px}.field label{font-size:12px;color:var(--muted);font-weight:650}.field input,.field select{width:100%;border:1px solid #d6e1dc;border-radius:9px;padding:10px;background:white;color:var(--ink)}.span2{grid-column:span 2}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:850px}th,td{text-align:left;padding:11px 9px;border-bottom:1px solid var(--line);font-size:13px;white-space:nowrap}th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}tr.today{background:#fff8e9}tr.checked{opacity:.62}.pill{display:inline-block;padding:4px 8px;border-radius:20px;background:var(--pale);color:var(--green);font-size:11px;font-weight:700}.pill.warn{background:#fff0d9;color:#96600d}.pill.out{background:#edf0ef;color:#65736f}.hidden{display:none!important}.modal{position:fixed;inset:0;background:#10231f88;display:grid;place-items:center;padding:16px;z-index:10}.modalbox{background:white;border-radius:18px;padding:22px;width:min(720px,100%);max-height:92vh;overflow:auto}.modalbox h2{margin-top:0}.notice{padding:10px;border-radius:9px;background:#eef5f2;margin:10px 0;color:#31534b}.error{background:#fff0ef;color:#a12f29}.empty{padding:24px;text-align:center;color:var(--muted)}.right{margin-left:auto}.muted{color:var(--muted)}.topline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.topline h2{margin-right:auto}
+@media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}.filters,.formgrid{grid-template-columns:repeat(2,1fr)}.wrap{padding:14px}.stat strong{font-size:24px}.span2{grid-column:span 2}}
+@media(max-width:420px){.filters,.formgrid{grid-template-columns:1fr}.span2{grid-column:auto}header h1{font-size:17px}}
+</style></head>
+<body>
+<header><div><h1>🏡 Guest House Manager</h1><small>Bookings · Occupancy · Checkout · Reports</small></div><div id="connection" class="pill warn">Not connected</div></header>
+<main class="wrap">
+<nav class="toolbar">
+<button class="active" data-tab="dashboard">Dashboard</button><button class="secondary" data-tab="bookings">Bookings</button><button class="secondary" data-tab="reports">Reports</button>
+<button class="secondary right" id="newBooking">＋ New booking</button><button class="secondary" id="exportBtn">Excel export 🔒</button>
+</nav>
+<section id="dashboard">
+<div class="stats">
+<div class="stat"><small>Bookings this month</small><strong id="sBookings">0</strong></div>
+<div class="stat"><small>Room-nights this month</small><strong id="sRooms">0</strong></div>
+<div class="stat"><small>Guests currently staying</small><strong id="sGuests">0</strong></div>
+<div class="stat"><small>Checkouts today</small><strong id="sCheckout">0</strong></div>
+</div>
+<div class="panel"><div class="topline"><h2>Room availability — today</h2><span class="muted">4 standard rooms + 1 VIP room</span></div><div id="roomInventory" class="stats" style="grid-template-columns:repeat(5,1fr);margin:0"></div></div>
+<div id="todayAlert"></div>
+<div class="panel"><div class="topline"><h2>Current month — booking details</h2><span class="muted" id="monthLabel"></span></div><div class="tablewrap"><table><thead><tr><th>Guest</th><th>From place</th><th>Rooms / Room no.</th><th>Guests</th><th>Check-in</th><th>Check-out</th><th>Days</th><th>Status</th></tr></thead><tbody id="monthRows"></tbody></table></div></div>
+</section>
+<section id="bookings" class="hidden"><div class="panel"><div class="topline"><h2>All bookings</h2><span class="muted" id="bookingCount"></span></div><div class="filters">
+<div class="field"><label>Search guest / place / mobile / room</label><input id="search" placeholder="Search..."></div>
+<div class="field"><label>Sort by</label><select id="sort"><option value="fromDate">Check-in date</option><option value="guestName">Guest name</option><option value="toDate">Check-out date</option><option value="createdAt">Recently added</option></select></div>
+<div class="field"><label>Month</label><input type="month" id="filterMonth"></div>
+<div class="field"><label>Year</label><select id="filterYear"><option value="">All years</option></select></div>
+</div><div class="tablewrap" style="margin-top:14px"><table><thead><tr><th>Guest</th><th>From place</th><th>Mobile</th><th>Rooms / Room no.</th><th>Guests</th><th>Check-in</th><th>Check-out</th><th>Days</th><th>Status</th><th>Action</th></tr></thead><tbody id="allRows"></tbody></table></div></div></section>
+<section id="reports" class="hidden"><div class="panel"><h2>Booking reports</h2><div class="filters"><div class="field"><label>Report period</label><select id="reportMode"><option value="month">Month-wise</option><option value="date">Date-wise</option><option value="year">Year-wise</option></select></div><div class="field" id="reportMonthField"><label>Month</label><input type="month" id="reportMonth"></div><div class="field hidden" id="reportDateField"><label>Date</label><input type="date" id="reportDate"></div><div class="field hidden" id="reportYearField"><label>Year</label><select id="reportYear"><option value="">Choose year</option></select></div></div><div class="actions"><button id="runReport">Show report</button><button class="secondary" id="reportExport">Export report to Excel 🔒</button></div><div id="reportSummary" class="notice">Choose a period and show report.</div><div class="tablewrap"><table><thead><tr><th>Date</th><th>Guest</th><th>Room no.</th><th>Rooms</th><th>Guests</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr></thead><tbody id="reportRows"></tbody></table></div></div></section>
+<div class="muted" style="text-align:center;font-size:12px;padding:10px">Guest House Manager · Shared database sync · Date format: DD-MM-YYYY</div>
+</main>
+<div id="modal" class="modal hidden"><div class="modalbox"><div class="topline"><h2 id="modalTitle">New booking</h2><button class="secondary right" id="closeModal">Close</button></div><div id="modalContent"></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="app.js"></script></body></html>
